@@ -5,6 +5,19 @@ app.use(express.json())
 
 const customers = []
 
+//Middleware
+const verifyAccountExistsCPF = function(request, response, next) {
+  const { cpf } = request.headers
+  
+  const customer = customers.find(custumer => custumer.cpf === cpf)
+
+  if(!customer) {
+    return response.status(400).json({error: 'Customer not found'})
+  }
+  request.customer = customer
+  next()
+}
+
 app.post('/account', (request, response) => {
   const {name, cpf} = request.body
  
@@ -29,17 +42,12 @@ app.post('/account', (request, response) => {
 })
 
 
-app.get('/statement/:cpf', (request, response) => {
-  const { cpf } = request.params
+app.get('/statement', verifyAccountExistsCPF, (request, response) => {
   
-  const customer = customers.find(custumer => custumer.cpf === cpf)
+  const { customer } = request
 
-  if(customer) {
-    return response.json(customer.statement)
-  }
+  return response.json(customer.statement)
 
-
-  return response.status(400).json({error: 'Customer not found'})
 })
 
 app.listen(3333, () => console.log('Server started on port 3333'))
