@@ -26,6 +26,13 @@ function getBalance(statement) {
     return acc - item.amount
   }, 0)
 }
+
+app.get('/account',verifyAccountExistsCPF, (request, response) => {
+  const { customer } = request
+
+  response.status(200).json(customer)
+
+})
 app.post('/account', (request, response) => {
   const {name, cpf} = request.body
  
@@ -49,6 +56,15 @@ app.post('/account', (request, response) => {
 
 })
 
+app.put('/account',verifyAccountExistsCPF, (request, response) => {
+  const { name } = request.body
+  const { customer } = request
+
+  customer.name = name
+
+  response.status(201).send()
+
+})
 
 app.get('/statement', verifyAccountExistsCPF, (request, response) => {
   
