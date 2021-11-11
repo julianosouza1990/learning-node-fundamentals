@@ -65,6 +65,21 @@ app.put('/account',verifyAccountExistsCPF, (request, response) => {
   response.status(201).send()
 
 })
+app.delete('/account',verifyAccountExistsCPF, (request, response) => {
+  const { customer } = request
+  customers.splice(customer, 1)
+
+  return response.status(200).json(customers)
+
+})
+
+app.get('/balance',verifyAccountExistsCPF, (request, response) => {
+  const { customer } = request
+  
+  return response.status(200).json({balance: getBalance(customer.statement)})
+
+})
+
 
 app.get('/statement', verifyAccountExistsCPF, (request, response) => {
   
@@ -86,8 +101,6 @@ app.get('/statement/date', verifyAccountExistsCPF, (request, response) => {
   return response.json(statement)
   
   
-
-
 })
 
 app.post('/deposit', verifyAccountExistsCPF, (request, response) => {
