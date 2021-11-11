@@ -4,7 +4,6 @@ const app = express();
 app.use(express.json())
 
 const customers = []
-
 //Middleware
 const verifyAccountExistsCPF = function(request, response, next) {
   const { cpf } = request.headers
@@ -18,6 +17,15 @@ const verifyAccountExistsCPF = function(request, response, next) {
   next()
 }
 
+
+function getBalance(statement) {
+  return statement.reduce((acc, item) => {
+    if(item.type === 'credit') {
+      return acc + item.amount
+    }
+    return acc - item.amount
+  }, 0)
+}
 app.post('/account', (request, response) => {
   const {name, cpf} = request.body
  
@@ -50,6 +58,22 @@ app.get('/statement', verifyAccountExistsCPF, (request, response) => {
 
 })
 
+
+app.get('/statement/date', verifyAccountExistsCPF, (request, response) => {
+  
+  const { date } = request.body
+  const { customer } = request
+  const formattedDate = new Date(date + " 00:00")
+
+  const statement = customer.statement.filter(stmt => stmt.created_at.toDateString() === formattedDate.toDateString())
+
+  return response.json(statement)
+  
+  
+
+
+})
+
 app.post('/deposit', verifyAccountExistsCPF, (request, response) => {
   const {description, amount } = request.body
   const { customer } = request
@@ -59,11 +83,32 @@ app.post('/deposit', verifyAccountExistsCPF, (request, response) => {
     description,
     amount,
     created_at: new Date(),
-    type: 'deposit'
+    type: 'credit'
     
   }
+  customer.balance += amount
   customer.statement.push(statementOperation)
   response.status(201).send(customer.statement)
 })
 
+app.post("/withdraw",verifyAccountExistsCPF, (request, response) => {
+  const { description, amount } = request.body
+  const { customer } = request
+ 
+ const balance = getBalance(customer.statement)
+ if(balance < amount) {
+  return response.json({error: 'Insufficient funds'})
+ }
+
+ const statementOperation = {
+  id: uuidv4(),
+  description,
+  amount,
+  created_at: new Date(),
+  type: 'withdraw'
+}
+
+  customer.statement.push(statementOperation)
+  response.status(201).send({transactionId: statementOperation.id})
+})
 app.listen(3333, () => console.log('Server started on port 3333'))
